@@ -1,7 +1,4 @@
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <stdint.h>
+#include "chip8.h"
 
 // run in cmd line gcc chip8.c -o chip8
 // ./chip8 <ROM program>
@@ -93,15 +90,52 @@ int main (int argc, char *argv[])
     long fsize = ftell(f);
     fseek(f, 0, SEEK_SET);
 
-    unsigned char *buffer = malloc(fsize + 0x200);
-    fread(buffer + 0x200, fsize, 1, f);
+    unsigned char *buffer = malloc(fsize + PC_START);
+    fread(buffer + PC_START, fsize, 1, f);
     fclose(f);
-    int pc = 0x200;
-    while (pc < (fsize + 0x200))
+    int pc = PC_START;
+    while (pc < (fsize + PC_START))
     {
         Disassembler(buffer, pc);
         pc += 2;
         printf("\n");
     }
     return 0;
+}
+
+Chip8State* initiate(void)
+{
+    Chip8State* state = calloc(sizeof(Chip8State), 1);
+    state->memory = calloc(TOTAL_RAM, 1);
+    state->screen = &state->memory[DISPLAY_BUFFER];
+    state->PC = PC_START;
+    state->SP = STACK_START;
+
+    return state;
+
+}
+
+void EmulateChip8(Chip8State *state) {
+    uint8_t *opcode = &state->memory[state->PC];
+    Disassembler(state->memory, state->PC);
+    int firstnib = (*opcode & 0xf0) >> 4; // mask last 4 bits and bit shift right 4 times
+    switch (firstnib)
+    {
+        case 0x00: printf("0 not handled yet"); break;    
+        case 0x01: printf("1 not handled yet"); break;    
+        case 0x02: printf("2 not handled yet"); break;    
+        case 0x03: printf("3 not handled yet"); break;    
+        case 0x04: printf("4 not handled yet"); break;    
+        case 0x05: printf("5 not handled yet"); break;    
+        case 0x06: printf("5 not handled yet"); break;    
+        case 0x07: printf("7 not handled yet"); break;    
+        case 0x08: printf("8 not handled yet"); break;    
+        case 0x09: printf("9 not handled yet"); break;    
+        case 0x0a: printf("5 not handled yet"); break;    
+        case 0x0b: printf("b not handled yet"); break;    
+        case 0x0c: printf("c not handled yet"); break;    
+        case 0x0d: printf("d not handled yet"); break;    
+        case 0x0e: printf("e not handled yet"); break;    
+        case 0x0f: printf("f not handled yet"); break;   
+    }
 }
