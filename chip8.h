@@ -1,3 +1,6 @@
+#ifndef Chip8_H
+#define Chip8_H
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -11,7 +14,8 @@
 #define PC_START 0x200
 #define SCREEN_WIDTH 64
 #define SCREEN_HEIGHT 32
-
+#define SPRITE_WIDTH 8
+#define SPRITE_BIT 0x80
 
 /* 
 V - 16 8 bit registers v0 v1 ... vF
@@ -28,5 +32,11 @@ typedef struct Chip8State {
     uint8_t delay;
     uint8_t sound;
     uint8_t *memory;
-    uint8_t *screen;
+    uint8_t screen[SCREEN_HEIGHT][SCREEN_WIDTH];
+    uint8_t drawflag;
+    uint8_t pause;
 } Chip8State;
+
+Chip8State* initiate(void);
+void EmulateChip8(Chip8State *state);
+#endif 

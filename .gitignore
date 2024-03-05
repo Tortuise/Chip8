@@ -4,7 +4,8 @@
 #ignore compiled
 *.o
 
-#ignore todo
+#ignore todo and txt
+*.txt
 TODO.TXT
 
 #ignore exe

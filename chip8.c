@@ -1,17 +1,16 @@
 #include "chip8.h"
 
-// run in cmd line gcc chip8.c -o chip8
-// ./chip8 <ROM program>
-// CHIP-8 program is to be loaded into the machine starting at address 200
-// https://github.com/trapexit/chip-8_documentation
-// https://github.com/mattmikolay/chip-8/wiki/CHIP%E2%80%908-Instruction-Set
+#include "instructions.h"
 
-void Disassembler(uint8_t *codebuffer, int pc) 
+
+
+void Disassembler(uint8_t *codebuffer, int pc, FILE *fptr) 
 {
     uint8_t *code = &codebuffer[pc];
     uint8_t firstnib = (code[0] >> 4);
 
     printf("%04x %02x %02x ", pc, code[0], code[1]);
+    fprintf(fptr, "%04x %02x %02x \n", pc, code[0], code[1]);
     switch(firstnib)
     {
         case 0x0: 
@@ -76,6 +75,31 @@ void Disassembler(uint8_t *codebuffer, int pc)
     }
 }
 
+static void opCode0(Chip8State *state, uint8_t *code){
+    switch (code[1])
+    {
+        case 0xE0: cls(state); break;
+        case 0xEE: break;
+
+    }
+}
+
+static void opCode1(Chip8State *state, uint8_t *code){
+    jmp_nnn(state, code);
+}
+
+static void opCode6(Chip8State *state, uint8_t *code){
+    ld_vx_nn(state, code);
+}
+
+static void opCodeA(Chip8State *state, uint8_t *code){
+    ld_i_nnn(state, code);
+}
+
+static void opCodeD(Chip8State *state, uint8_t *code){
+    drw_vx_vy_n(state, code);
+}
+
 
 int main (int argc, char *argv[])
 {
@@ -94,12 +118,28 @@ int main (int argc, char *argv[])
     fread(buffer + PC_START, fsize, 1, f);
     fclose(f);
     int pc = PC_START;
+
+    FILE *fptr;
+    fptr = fopen("filename.txt", "w");
     while (pc < (fsize + PC_START))
     {
-        Disassembler(buffer, pc);
+        Disassembler(buffer, pc, fptr);
         pc += 2;
         printf("\n");
     }
+    fclose(fptr);
+
+    // Chip8State* chip8 = initiate();
+    // while ( chip8->PC < (fsize + PC_START))
+    // {
+    //     EmulateChip8(chip8); // 1 cycle
+    //     if (chip8->drawflag)
+    //     {
+    //         printf("drawing graphics \n");
+    //         chip8->drawflag = 0;
+    //     }
+    // }
+
     return 0;
 }
 
@@ -107,35 +147,42 @@ Chip8State* initiate(void)
 {
     Chip8State* state = calloc(sizeof(Chip8State), 1);
     state->memory = calloc(TOTAL_RAM, 1);
-    state->screen = &state->memory[DISPLAY_BUFFER];
+    //clear screen
+    for (int i = 0; i < SCREEN_HEIGHT; i++) {
+        for (int j = 0; j < SCREEN_WIDTH; j++) {
+            state->screen[i][j] = 0;
+        }
+    }
     state->PC = PC_START;
     state->SP = STACK_START;
-
+    state->drawflag = 0;
+    state->pause = 0;
     return state;
 
 }
 
 void EmulateChip8(Chip8State *state) {
     uint8_t *opcode = &state->memory[state->PC];
-    Disassembler(state->memory, state->PC);
     int firstnib = (*opcode & 0xf0) >> 4; // mask last 4 bits and bit shift right 4 times
+    printf("Emulating ");
+    printf("%04x %02x %02x ", state->PC, opcode[0], opcode[1]);
     switch (firstnib)
     {
-        case 0x00: printf("0 not handled yet"); break;    
-        case 0x01: printf("1 not handled yet"); break;    
-        case 0x02: printf("2 not handled yet"); break;    
-        case 0x03: printf("3 not handled yet"); break;    
-        case 0x04: printf("4 not handled yet"); break;    
-        case 0x05: printf("5 not handled yet"); break;    
-        case 0x06: printf("5 not handled yet"); break;    
-        case 0x07: printf("7 not handled yet"); break;    
-        case 0x08: printf("8 not handled yet"); break;    
-        case 0x09: printf("9 not handled yet"); break;    
-        case 0x0a: printf("5 not handled yet"); break;    
-        case 0x0b: printf("b not handled yet"); break;    
-        case 0x0c: printf("c not handled yet"); break;    
-        case 0x0d: printf("d not handled yet"); break;    
-        case 0x0e: printf("e not handled yet"); break;    
-        case 0x0f: printf("f not handled yet"); break;   
+        case 0x0: opCode0(state, opcode); break;    
+        case 0x1: opCode1(state, opcode); break;    
+        case 0x2: printf("2 not handled yet"); break;    
+        case 0x3: printf("3 not handled yet"); break;    
+        case 0x4: printf("4 not handled yet"); break;    
+        case 0x5: printf("5 not handled yet"); break;    
+        case 0x6: opCode6(state, opcode); break;    
+        case 0x7: printf("7 not handled yet"); break;    
+        case 0x8: printf("8 not handled yet"); break;    
+        case 0x9: printf("9 not handled yet"); break;    
+        case 0xa: opCodeA(state, opcode); break;    
+        case 0xb: printf("b not handled yet"); break;    
+        case 0xc: printf("c not handled yet"); break;    
+        case 0xd: opCodeD(state, opcode); break;    
+        case 0xe: printf("e not handled yet"); break;    
+        case 0xf: printf("f not handled yet"); break;   
     }
 }
