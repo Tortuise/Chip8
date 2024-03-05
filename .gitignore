@@ -1,0 +1,11 @@
+#ignore all .log
+*.log
+
+#ignore compiled
+*.o
+
+#ignore todo
+TODO.TXT
+
+#ignore exe
+*.exe
