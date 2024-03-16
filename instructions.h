@@ -23,6 +23,7 @@ void jmp_nnn(Chip8State *state, uint8_t *code);
 // 6XNN	Store number NN in register VX
 void ld_vx_nn(Chip8State *state, uint8_t *code);
 // 7XNN	Add the value NN to register VX
+void add_vx_nn(Chip8State *state, uint8_t *code);
 // 8XY0	Store the value of register VY in register VX
 // 8XY1	Set VX to VX OR VY
 // 8XY2	Set VX to VX AND VY
