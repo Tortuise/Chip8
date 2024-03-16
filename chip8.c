@@ -1,20 +1,18 @@
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <stdint.h>
+#include "chip8.h"
+#include "instructions.h"
 
-// run in cmd line gcc chip8.c -o chip8
-// ./chip8 <ROM program>
-// CHIP-8 program is to be loaded into the machine starting at address 200
-// https://github.com/trapexit/chip-8_documentation
-// https://github.com/mattmikolay/chip-8/wiki/CHIP%E2%80%908-Instruction-Set
-
-void Disassembler(uint8_t *codebuffer, int pc) 
+void Disassembler(uint8_t *codebuffer, int pc, FILE *fptr) 
 {
     uint8_t *code = &codebuffer[pc];
     uint8_t firstnib = (code[0] >> 4);
-
+    uint8_t lastnib = code[1]>>4;
+    
     printf("%04x %02x %02x ", pc, code[0], code[1]);
+    if (fptr)
+    {
+        fprintf(fptr, "%04x %02x %02x \n", pc, code[0], code[1]);
+    }
+    
     switch(firstnib)
     {
         case 0x0: 
@@ -33,7 +31,6 @@ void Disassembler(uint8_t *codebuffer, int pc)
         case 0x6: printf("%10s $%01x%02x", "LD VX, NN", code[0]&0xf, code[1]); break; //6XNN Store number NN in register VX
         case 0x7: printf("%10s $%01x%02x", "ADD VX, NN", code[0]&0xf, code[1]); break; // 7XNN Add value NN to registe VX
         case 0x8: 
-            uint8_t lastnib = code[1]>>4;
             switch (lastnib) // last nibble of instruction
             {
                 case 0: printf("%10s $%01x%02x", "LD VX VY", code[0]&0xf, code[1]>>4); break;
@@ -79,6 +76,164 @@ void Disassembler(uint8_t *codebuffer, int pc)
     }
 }
 
+SDL_Window* window;
+SDL_Renderer* renderer;
+SDL_Texture* texture;
+
+//SDL functions
+int sdlInit()
+{
+	//Initialization flag
+	int success = 1;
+    SDL_Init(SDL_INIT_VIDEO);
+    window = SDL_CreateWindow("Chip8",
+     SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH * 10, SCREEN_HEIGHT * 10, 0);
+    if (!window){
+        fprintf(stderr, "Could not create %s: %s\n", "window", SDL_GetError());
+        return 0;
+    }
+     uint8_t render_flags = SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC;
+    renderer = SDL_CreateRenderer(window, -1, render_flags);
+    if (!renderer){
+        fprintf(stderr, "Could not create %s: %s\n", "renderer", SDL_GetError());
+        return 0;
+    }
+    texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, SCREEN_WIDTH, SCREEN_HEIGHT);
+	if (!texture){
+        fprintf(stderr, "Could not create %s: %s\n", "texture", SDL_GetError());
+        return 0;
+    }
+    return success;
+}
+
+void renderScreen(Chip8State *state)
+{
+    // Flatten the 2D screen array to a linear array
+    // uint32_t pixels[SCREEN_WIDTH * SCREEN_HEIGHT];
+
+    // for (int y = 0; y < SCREEN_HEIGHT; y++) 
+    // {
+    //     for (int x = 0; x < SCREEN_WIDTH; x++)
+    //     {
+    //         int index = y * SCREEN_WIDTH + x;
+    //         if (state->screen[y][x])
+    //         {
+    //             pixels[index] = 0xFFFFFF;
+    //         }
+    //         else 
+    //         {
+    //             pixels[index] = 0;
+    //         }
+    //     }
+    // }
+    FILE *file = fopen("draw.txt", "w");
+    if (file == NULL) {
+        perror("Error opening file");
+        return;
+    }
+
+    for (int y = 0; y < SCREEN_HEIGHT; y++) {
+        for (int x = 0; x < SCREEN_WIDTH; x++) {
+            int index = y * SCREEN_WIDTH + x;
+            fprintf(file, "%6x ", state->screen[index]); 
+        }
+        fprintf(file, "\n");
+    }
+
+    fclose(file);
+
+    SDL_UpdateTexture(texture, NULL, state->screen, SCREEN_WIDTH * sizeof(uint32_t));
+    SDL_RenderCopy(renderer, texture, NULL, NULL);
+    SDL_RenderPresent(renderer);
+}
+
+void clearSDL() {
+    SDL_DestroyTexture(texture);
+    SDL_DestroyRenderer(renderer);
+    SDL_DestroyWindow(window);
+    SDL_Quit();
+}
+
+static void opCode0(Chip8State *state, uint8_t *code)
+{
+    switch (code[1])
+    {
+        case 0xE0: cls(state); break;
+        case 0xEE: break;
+        default: printf("Not implemented 0"); state->pause = 1; break;
+
+    }
+}
+
+static void opCode1(Chip8State *state, uint8_t *code)
+{
+    jmp_nnn(state, code);
+}
+
+static void opCode6(Chip8State *state, uint8_t *code)
+{
+    ld_vx_nn(state, code);
+}
+
+static void opCodeA(Chip8State *state, uint8_t *code)
+{
+    ld_i_nnn(state, code);
+}
+
+static void opCodeD(Chip8State *state, uint8_t *code)
+{
+    drw_vx_vy_n(state, code);
+}
+
+static void opCode7(Chip8State *state, uint8_t *code)
+{
+    add_vx_nn(state, code);
+}
+
+Chip8State* initiate(void)
+{
+    Chip8State* state = calloc(sizeof(Chip8State), 1);
+    state->memory = calloc(TOTAL_RAM, 1);
+    //clear screen
+    // for (int i = 0; i < SCREEN_HEIGHT; i++) {
+    //     for (int j = 0; j < SCREEN_WIDTH; j++) {
+    //         state->screen[i][j] = 0;
+    //     }
+    // }
+    memset(state->screen, 0, sizeof(state->screen));
+    state->PC = PC_START;
+    state->SP = STACK_START;
+    state->drawflag = 0;
+    state->pause = 0;
+    return state;
+
+}
+
+void EmulateChip8(Chip8State *state) {
+    uint8_t *opcode = &state->memory[state->PC];
+    uint8_t highnib = (opcode[0]) >> 4; // mask last 4 bits and bit shift right 4 times
+    Disassembler(state->memory, state->PC, NULL);
+    printf(" Emulating %04x %02x %02x \n", state->PC, opcode[0], opcode[1]);
+    switch (highnib)
+    {
+        case 0x00: opCode0(state, opcode); break;    
+        case 0x01: opCode1(state, opcode); break;    
+        case 0x02: printf("2 not handled yet"); state->pause = 1; break;    
+        case 0x03: printf("3 not handled yet"); state->pause = 1; break;    
+        case 0x04: printf("4 not handled yet"); state->pause = 1; break;    
+        case 0x05: printf("5 not handled yet"); state->pause = 1; break;    
+        case 0x06: opCode6(state, opcode); break;    
+        case 0x07: opCode7(state, opcode); break;    
+        case 0x08: printf("8 not handled yet"); state->pause = 1; break;    
+        case 0x09: printf("9 not handled yet"); state->pause = 1; break;    
+        case 0x0a: opCodeA(state, opcode); break;    
+        case 0x0b: printf("b not handled yet"); state->pause = 1; break;    
+        case 0x0c: printf("c not handled yet"); state->pause = 1; break;    
+        case 0x0d: opCodeD(state, opcode); break;    
+        case 0x0e: printf("e not handled yet"); state->pause = 1; break;    
+        case 0x0f: printf("f not handled yet"); state->pause = 1; break;   
+    }
+}
 
 int main (int argc, char *argv[])
 {
@@ -93,15 +248,84 @@ int main (int argc, char *argv[])
     long fsize = ftell(f);
     fseek(f, 0, SEEK_SET);
 
-    unsigned char *buffer = malloc(fsize + 0x200);
-    fread(buffer + 0x200, fsize, 1, f);
+    unsigned char *buffer = malloc(fsize + PC_START);
+    fread(buffer + PC_START, fsize, 1, f);
     fclose(f);
-    int pc = 0x200;
-    while (pc < (fsize + 0x200))
+    int pc = PC_START;
+
+    FILE *fptr;
+    fptr = fopen("filename.txt", "w");
+    while (pc < (fsize + PC_START))
     {
-        Disassembler(buffer, pc);
+        Disassembler(buffer, pc, fptr);
         pc += 2;
         printf("\n");
     }
+    fclose(fptr);
+    printf("Iniating \n");
+    Chip8State* chip8 = initiate();
+   
+    // load rom into memory
+    printf("Loading to ROM \n");
+    for(int i = 0; i < fsize; ++i) 
+    {
+        chip8->memory[i + PC_START] = buffer[i + PC_START];
+    }
+    printf("Checking Debug Mode \n");
+    int debugMode = 0;
+    if (argc > 2 && strcmp(argv[2], "debug") == 0) 
+    {
+        debugMode = 1;
+        printf("DEBUG MODE ON \n");
+    }
+    printf("Iniating SDL\n");
+    sdlInit();
+    printf("Starting Execution Cycles \n");
+    int cycles = 0;
+    while ( chip8->pause == 0 )
+    {
+        if (debugMode == 1)
+        {
+            char input;
+            printf("Debug mode enabled. Press Enter to execute each cycle (q + Enter to quit).\n");
+            while ((input = getchar()) != 'q')
+            {
+                if (input == '\n') 
+                {
+                    EmulateChip8(chip8);
+                    printf("Cycle executed. Press Enter to execute the next cycle (q + Enter to quit).\n");
+                }
+            }
+        }
+        else 
+        {
+            printf("emulateing \n");
+            EmulateChip8(chip8); // 1 cycle
+        }
+        
+        if (chip8->drawflag)
+        {
+            renderScreen(chip8);
+            chip8->drawflag = 0;
+        }
+
+        printf("end cycle %d \n", cycles);
+        
+        if (((strcmp(argv[1],"1-chip8-logo.ch8") == 0) & (cycles == 39))
+        | ((strcmp(argv[1],"2-ibm-logo.ch8") == 0) & (cycles == 20))) 
+        {
+            printf("end test rom \n");
+            // pause indef
+            
+            printf("q + Enter to quit.\n");
+            char input = getchar();
+            if (input == 'q')
+            {
+                chip8->pause = 1;
+            }
+        }
+        cycles += 1;
+    }
+    clearSDL();
     return 0;
 }
