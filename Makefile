@@ -29,6 +29,6 @@ $(INSTRUCTIONS_OBJ): $(INSTRUCTIONS_SRC) $(INSTRUCTIONS_HEADER) $(CHIP8_HEADER)
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 clean:
-	del /Q $(CHIP8_OBJ) $(INSTRUCTIONS_OBJ) $(TARGET)
+	rm -f *.o *.exe
 
 .PHONY: all clean

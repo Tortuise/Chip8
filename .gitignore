@@ -6,7 +6,12 @@
 
 #ignore todo and txt
 *.txt
-TODO.TXT
 
 #ignore exe
 *.exe
+
+#ignore .vscode
+.vscode
+
+#ignore bmp files
+*.bmp
