@@ -98,7 +98,7 @@ int sdlInit()
         fprintf(stderr, "Could not create %s: %s\n", "renderer", SDL_GetError());
         return 0;
     }
-    texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, SCREEN_WIDTH, SCREEN_HEIGHT);
+    texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_TARGET, SCREEN_WIDTH, SCREEN_HEIGHT);
 	if (!texture){
         fprintf(stderr, "Could not create %s: %s\n", "texture", SDL_GetError());
         return 0;
@@ -108,30 +108,12 @@ int sdlInit()
 
 void renderScreen(Chip8State *state)
 {
-    // Flatten the 2D screen array to a linear array
-    // uint32_t pixels[SCREEN_WIDTH * SCREEN_HEIGHT];
-
-    // for (int y = 0; y < SCREEN_HEIGHT; y++) 
-    // {
-    //     for (int x = 0; x < SCREEN_WIDTH; x++)
-    //     {
-    //         int index = y * SCREEN_WIDTH + x;
-    //         if (state->screen[y][x])
-    //         {
-    //             pixels[index] = 0xFFFFFF;
-    //         }
-    //         else 
-    //         {
-    //             pixels[index] = 0;
-    //         }
-    //     }
-    // }
     FILE *file = fopen("draw.txt", "w");
     if (file == NULL) {
         perror("Error opening file");
         return;
     }
-
+    // log render
     for (int y = 0; y < SCREEN_HEIGHT; y++) {
         for (int x = 0; x < SCREEN_WIDTH; x++) {
             int index = y * SCREEN_WIDTH + x;
@@ -143,6 +125,7 @@ void renderScreen(Chip8State *state)
     fclose(file);
 
     SDL_UpdateTexture(texture, NULL, state->screen, SCREEN_WIDTH * sizeof(uint32_t));
+    SDL_RenderClear(renderer);
     SDL_RenderCopy(renderer, texture, NULL, NULL);
     SDL_RenderPresent(renderer);
 }

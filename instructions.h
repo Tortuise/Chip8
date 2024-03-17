@@ -12,11 +12,12 @@
 // 0NNN	Execute machine language subroutine at address NNN
 // 00E0	Clear the screen CLS
 void cls(Chip8State *state);
-
 // 00EE	Return from a subroutine
+void ret(Chip8State *state);
 // 1NNN	Jump to address NNN
 void jmp_nnn(Chip8State *state, uint8_t *code);
 // 2NNN	Execute subroutine starting at address NNN
+void call_nnn(Chip8State *state, uint8_t *code);
 // 3XNN	Skip the following instruction if the value of register VX equals NN
 // 4XNN	Skip the following instruction if the value of register VX is not equal to NN
 // 5XY0	Skip the following instruction if the value of register VX is equal to the value of register VY
