@@ -8,6 +8,7 @@
 #include <SDL2/SDL.h>
 
 #define NUM_V_REGISTERS 16
+#define STACK_SIZE 16
 #define TOTAL_RAM 4096
 #define STACK_SIZE 16
 #define STACK_START 0xea0 // (0xEA0-0xEFF) were reserved for the call stack,
@@ -20,6 +21,7 @@
 #define SPRITE_BIT 0x80
 #define MONITOR_WIDTH 640
 #define MONITOR_HEIGHT 480
+#define OVERFLOW 255
 
 /* 
 V - 16 8 bit registers v0 v1 ... vF
@@ -36,6 +38,7 @@ typedef struct Chip8State {
     uint8_t delay;
     uint8_t sound;
     uint8_t *memory;
+    uint16_t stack[STACK_SIZE];
     uint32_t screen[SCREEN_HEIGHT * SCREEN_WIDTH];
     uint8_t drawflag;
     uint8_t pause;

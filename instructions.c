@@ -14,8 +14,9 @@ void cls(Chip8State *state)
 // 00EE RET - Return from subroutine. Set the PC to the address at the top of the stack and subtract 1 from the SP.
 void ret(Chip8State *state)
 {
-    
     state->SP -= 1;
+    state->PC = state->stack[state->SP];
+    state->PC += 2;
 }
 
 // 1NNN JMP NNN - Set PC to NNN.
@@ -34,11 +35,41 @@ void jmp_nnn(Chip8State *state, uint8_t *code)
 // Then set the PC to NNN. Generally there is a limit of 16 successive calls.
 void call_nnn(Chip8State *state, uint8_t *code)
 {
+    state->stack[state->SP] = state->PC;
     state->SP += 1;
     state->PC = ((code[0] & 0xF) << 8) | code[1];
 
 }
 
+// 3XNN	SE VX, NN - Skip the next instruction if register VX is equal to NN.
+void se_vx_nn(Chip8State *state, uint8_t *code)
+{
+    if (state->V[(code[0] & 0xF)] == code[1])
+    {
+        state->PC += 2;
+    }
+    state->PC += 2;
+}
+
+// 4XNN	SNE VX, NN - Skip the next instruction if register VX is not equal to NN.
+void sne_vx_nn(Chip8State *state, uint8_t *code)
+{
+    if (state->V[(code[0] & 0xF)] != code[1])
+    {
+        state->PC += 2;
+    }
+    state->PC += 2;
+}
+
+// 5XY0	SE VX VY - Skip the following instruction if the value of register VX is equal to the value of register VY
+void se_vx_vy(Chip8State *state, uint8_t *code)
+{
+    if (state->V[(code[0] & 0xF)] == state->V[(code[1] & 0xF0) >> 4])
+    {
+        state->PC += 2;
+    }
+    state->PC += 2;
+}
 
 // 6XNN LD VX, NN - Store number NN in register VX.
 void ld_vx_nn(Chip8State *state, uint8_t *code)
@@ -55,6 +86,140 @@ void add_vx_nn(Chip8State *state, uint8_t *code)
     uint8_t nn = code[1];
     uint8_t x = code[0] & 0xF;
     state->V[x] += nn;
+    state->PC += 2;
+}
+
+// 8XY0	LD VX VY - Store the value of register VY in register VX
+void ld_vx_vy(Chip8State *state, uint8_t *code)
+{
+    uint8_t x = code[0] & 0xF;
+    uint8_t y = (code[1] & 0xF0) >> 4;
+    state->V[x] = state->V[y];
+    state->PC += 2;
+}
+
+// 8XY1	Set VX to VX OR VY
+void or_vx_vy(Chip8State *state, uint8_t *code)
+{
+    uint8_t x = code[0] & 0xF;
+    uint8_t y = (code[1] & 0xF0) >> 4;
+    state->V[x] |= state->V[y];
+    state->PC += 2;
+}
+
+// 8XY2	Set VX to VX AND VY
+void and_vx_vy(Chip8State *state, uint8_t *code)
+{
+    uint8_t x = code[0] & 0xF;
+    uint8_t y = (code[1] & 0xF0) >> 4;
+    state->V[x] &= state->V[y];
+    state->PC += 2;
+}
+
+// 8XY3	Set VX to VX XOR VY
+void xor_vx_vy(Chip8State *state, uint8_t *code)
+{
+    uint8_t x = code[0] & 0xF;
+    uint8_t y = (code[1] & 0xF0) >> 4;
+    state->V[x] ^= state->V[y];
+    state->PC += 2;
+}
+
+// 8XY4	Add the value of register VY to register VX
+// Set VF to 01 if a carry occurs
+// Set VF to 00 if a carry does not occur
+void add_vx_vy(Chip8State *state, uint8_t *code)
+{
+    uint8_t x = code[0] & 0xF;
+    uint8_t y = (code[1] & 0xF0) >> 4;
+    if (state->V[x] + state->V[y] > OVERFLOW)
+    {
+        state->V[0xF] = 1;
+    }
+    else 
+    {
+        state->V[0xF] = 0;
+    }
+    state->V[x] += state->V[y];
+
+    state->PC += 2;
+}
+
+// 8XY5	Subtract the value of register VY from register VX
+// Set VF to 00 if a borrow occurs
+// Set VF to 01 if a borrow does not occur
+void sub_vx_vy(Chip8State *state, uint8_t *code)
+{
+    uint8_t x = code[0] & 0xF;
+    uint8_t y = (code[1] & 0xF0) >> 4;
+    if (state->V[x] < state->V[y])
+    {
+        state->V[0xF] = 1;
+    }
+    else 
+    {
+        state->V[0xF] = 0;
+    }
+    state->V[x] -= state->V[y];
+
+    state->PC += 2;
+}
+
+// 8XY6	Store the value of register VY shifted right one bit in register VX¹
+// Set register VF to the least significant bit prior to the shift
+// VY is unchanged
+void shr_vx_vy(Chip8State *state, uint8_t *code)
+{
+    uint8_t x = code[0] & 0xF;
+    uint8_t y = (code[1] & 0xF0) >> 4;
+
+    state->V[0xF] = state->V[y] & 0x1;
+    state->V[x] = state->V[y] >> 1;
+
+    state->PC += 2;
+}
+
+// 8XY7	Set register VX to the value of VY minus VX
+// Set VF to 00 if a borrow occurs
+// Set VF to 01 if a borrow does not occur
+void subn_vx_vy(Chip8State *state, uint8_t *code)
+{
+    uint8_t x = code[0] & 0xF;
+    uint8_t y = (code[1] & 0xF0) >> 4;
+    if (state->V[x] > state->V[y])
+    {
+        state->V[0xF] = 1;
+    }
+    else 
+    {
+        state->V[0xF] = 0;
+    }
+    state->V[x] = state->V[y] - state->V[x];
+
+    state->PC += 2;
+}
+
+// 8XYE	Store the value of register VY shifted left one bit in register VX¹
+// Set register VF to the most significant bit prior to the shift
+// VY is unchanged
+void shl_vx_vy(Chip8State *state, uint8_t *code)
+{
+    uint8_t x = code[0] & 0xF;
+    uint8_t y = (code[1] & 0xF0) >> 4;
+
+    state->V[0xF] = state->V[y] >> 7;
+    state->V[x] = state->V[y] << 1;
+
+    state->PC += 2;
+}
+
+// 9XY0	SNE VX VY - Skip the following instruction if the value of register VX is not equal to the value of register VY
+void sne_vx_vy(Chip8State *state, uint8_t *code)
+{
+    if (state->V[(code[0] & 0xF)] != state->V[(code[1] & 0xF0) >> 4])
+    {
+        state->PC += 2;
+    }
     state->PC += 2;
 }
 

@@ -5,7 +5,7 @@ void Disassembler(uint8_t *codebuffer, int pc, FILE *fptr)
 {
     uint8_t *code = &codebuffer[pc];
     uint8_t firstnib = (code[0] >> 4);
-    uint8_t lastnib = code[1]>>4;
+    uint8_t lastnib = code[1] & 0xf;
     
     printf("%04x %02x %02x ", pc, code[0], code[1]);
     if (fptr)
@@ -137,42 +137,6 @@ void clearSDL() {
     SDL_Quit();
 }
 
-static void opCode0(Chip8State *state, uint8_t *code)
-{
-    switch (code[1])
-    {
-        case 0xE0: cls(state); break;
-        case 0xEE: break;
-        default: printf("Not implemented 0"); state->pause = 1; break;
-
-    }
-}
-
-static void opCode1(Chip8State *state, uint8_t *code)
-{
-    jmp_nnn(state, code);
-}
-
-static void opCode6(Chip8State *state, uint8_t *code)
-{
-    ld_vx_nn(state, code);
-}
-
-static void opCodeA(Chip8State *state, uint8_t *code)
-{
-    ld_i_nnn(state, code);
-}
-
-static void opCodeD(Chip8State *state, uint8_t *code)
-{
-    drw_vx_vy_n(state, code);
-}
-
-static void opCode7(Chip8State *state, uint8_t *code)
-{
-    add_vx_nn(state, code);
-}
-
 Chip8State* initiate(void)
 {
     Chip8State* state = calloc(sizeof(Chip8State), 1);
@@ -195,26 +159,46 @@ Chip8State* initiate(void)
 void EmulateChip8(Chip8State *state) {
     uint8_t *opcode = &state->memory[state->PC];
     uint8_t highnib = (opcode[0]) >> 4; // mask last 4 bits and bit shift right 4 times
+    uint8_t lastnib = opcode[1] & 0xF;
     Disassembler(state->memory, state->PC, NULL);
     printf(" Emulating %04x %02x %02x \n", state->PC, opcode[0], opcode[1]);
     switch (highnib)
     {
-        case 0x00: opCode0(state, opcode); break;    
-        case 0x01: opCode1(state, opcode); break;    
-        case 0x02: printf("2 not handled yet"); state->pause = 1; break;    
-        case 0x03: printf("3 not handled yet"); state->pause = 1; break;    
-        case 0x04: printf("4 not handled yet"); state->pause = 1; break;    
-        case 0x05: printf("5 not handled yet"); state->pause = 1; break;    
-        case 0x06: opCode6(state, opcode); break;    
-        case 0x07: opCode7(state, opcode); break;    
-        case 0x08: printf("8 not handled yet"); state->pause = 1; break;    
-        case 0x09: printf("9 not handled yet"); state->pause = 1; break;    
-        case 0x0a: opCodeA(state, opcode); break;    
-        case 0x0b: printf("b not handled yet"); state->pause = 1; break;    
-        case 0x0c: printf("c not handled yet"); state->pause = 1; break;    
-        case 0x0d: opCodeD(state, opcode); break;    
-        case 0x0e: printf("e not handled yet"); state->pause = 1; break;    
-        case 0x0f: printf("f not handled yet"); state->pause = 1; break;   
+        case 0x00: 
+            switch (opcode[1])
+            {
+                case 0xe0: cls(state); break;
+                case 0xee: ret(state); break;
+                default: printf("Not implemented 0"); state->pause = 1; break;
+            } break;
+        case 0x01: jmp_nnn(state, opcode); break;    
+        case 0x02: call_nnn(state, opcode); break;    
+        case 0x03: se_vx_nn(state, opcode); break;    
+        case 0x04: sne_vx_nn(state, opcode); break;  
+        case 0x05: se_vx_vy(state, opcode); break;    
+        case 0x06: ld_vx_nn(state, opcode); break;    
+        case 0x07: add_vx_nn(state, opcode); break;    
+        case 0x08: 
+            switch (lastnib)
+            {
+                case 0: ld_vx_vy(state, opcode); break;
+                case 1: or_vx_vy(state, opcode); break;
+                case 2: and_vx_vy(state, opcode); break;
+                case 3: xor_vx_vy(state, opcode); break;
+                case 4: add_vx_vy(state, opcode); break;
+                case 5: sub_vx_vy(state, opcode); break;
+                case 6: shr_vx_vy(state, opcode); break;
+                case 7: subn_vx_vy(state, opcode); break;
+                case 0xe: shl_vx_vy(state, opcode); break;
+                default: printf("Not Implemented 8"); break;
+            } break;
+        case 0x09: sne_vx_vy(state, opcode); break;    
+        case 0x0a: ld_i_nnn(state, opcode); break;    
+        case 0x0b: printf("b not handled yet \n"); state->pause = 1; break;    
+        case 0x0c: printf("c not handled yet \n"); state->pause = 1; break;    
+        case 0x0d: drw_vx_vy_n(state, opcode); break;    
+        case 0x0e: printf("e not handled yet \n"); state->pause = 1; break;    
+        case 0x0f: printf("f not handled yet \n"); state->pause = 1; break;   
     }
 }
 
@@ -309,6 +293,11 @@ int main (int argc, char *argv[])
         }
         cycles += 1;
     }
-    clearSDL();
+    printf("q + Enter to clear screen\n");
+    char input = getchar();
+    if (input == 'q')
+        {
+            clearSDL();
+        }
     return 0;
 }
