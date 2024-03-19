@@ -3,7 +3,7 @@ ____________
 
 CHIP-8 Interpreter written in C.
 
-CHIP-8 is an interpreted minimalist programming language that was designed by Joseph Weisbecker in the 1970s for use on the RCA COSMAC VIP computer.
+CHIP-8 is an interpreted minimalist programming language that was designed for use on the RCA COSMAC VIP computer.
 Due to its hexadecimal format, it was best suited to machines with a scarcity of memory, as minimal text processing had to be performed by the interpreter before a program could be executed.
 
 SETUP
