@@ -270,3 +270,48 @@ void drw_vx_vy_n(Chip8State *state, uint8_t *code)
     state->drawflag = 1;
     state->PC += 2;
 }
+
+// FX1E	ADD I VX - Add the value stored in register VX to register I
+void add_i_vx(Chip8State *state, uint8_t *code)
+{
+    uint8_t value = state->V[code[0] & 0xF];
+    state->I += value;
+    state->PC += 2;
+}
+
+// FX33	BCD VX - Store the binary-coded decimal equivalent of the value stored in register VX at addresses I, I + 1, and I + 2
+// most significant decimal digit is then stored in at the address found in I, the next in I + 1, and the least significant digit in I + 2
+void bcd_vx(Chip8State *state, uint8_t *code)
+{
+    uint8_t value = state->V[code[0] & 0xF];
+
+    state->memory[state->I] = value / 100;
+    state->memory[state->I+1] = (value / 10) % 10;
+    state->memory[state->I+2] = (value % 100) % 10;
+    state->PC += 2;
+}
+
+// FX55	LD I VX - Store the values of registers V0 to VX inclusive in memory starting at address I
+// I is set to I + X + 1 after operation²
+void ld_i_vx(Chip8State *state, uint8_t *code)
+{
+    uint8_t x = code[0] & 0xF;
+
+    for (int i = 0; i <= x; i++)
+    {
+        state->memory[state->I+i] = state->V[i];
+    }
+    state->I += x + 1;
+    state->PC += 2;   
+}
+
+// FX65	LD VX I - Copy values from memory location I through I + X into registers V0 through VX. I does not change.
+void ld_vx_i(Chip8State *state, uint8_t *code)
+{
+    uint8_t x = code[0] & 0xF;
+    for (int i = 0; i <= x; i++)
+    {
+        state->V[i] = state->memory[state->I+i];
+    }
+    state->PC += 2; 
+}

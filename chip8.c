@@ -198,7 +198,15 @@ void EmulateChip8(Chip8State *state) {
         case 0x0c: printf("c not handled yet \n"); state->pause = 1; break;    
         case 0x0d: drw_vx_vy_n(state, opcode); break;    
         case 0x0e: printf("e not handled yet \n"); state->pause = 1; break;    
-        case 0x0f: printf("f not handled yet \n"); state->pause = 1; break;   
+        case 0x0f: 
+            switch (opcode[1])
+            {
+                case 0x1e: add_i_vx(state, opcode); break;
+                case 0x33: bcd_vx(state, opcode); break;
+                case 0x55: ld_i_vx(state, opcode); break;
+                case 0x65: ld_vx_i(state, opcode); break;
+                default: printf("Not implemented f"); state->pause = 1; break;
+            } break; 
     }
 }
 
