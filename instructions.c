@@ -132,7 +132,9 @@ void add_vx_vy(Chip8State *state, uint8_t *code)
 {
     uint8_t x = code[0] & 0xF;
     uint8_t y = (code[1] & 0xF0) >> 4;
-    if (state->V[x] + state->V[y] > OVERFLOW)
+    uint16_t res = state->V[x] + state->V[y];
+    state->V[x] += state->V[y];
+    if (res > OVERFLOW)
     {
         state->V[0xF] = 1;
     }
@@ -140,7 +142,6 @@ void add_vx_vy(Chip8State *state, uint8_t *code)
     {
         state->V[0xF] = 0;
     }
-    state->V[x] += state->V[y];
 
     state->PC += 2;
 }
@@ -152,30 +153,29 @@ void sub_vx_vy(Chip8State *state, uint8_t *code)
 {
     uint8_t x = code[0] & 0xF;
     uint8_t y = (code[1] & 0xF0) >> 4;
-    if (state->V[x] < state->V[y])
-    {
-        state->V[0xF] = 1;
-    }
-    else 
+    int res = (state->V[x] < state->V[y]);
+    state->V[x] -= state->V[y];
+    if (res)
     {
         state->V[0xF] = 0;
     }
-    state->V[x] -= state->V[y];
+    else 
+    {
+        state->V[0xF] = 1;
+    }
 
     state->PC += 2;
 }
 
-// 8XY6	Store the value of register VY shifted right one bit in register VX¹
-// Set register VF to the least significant bit prior to the shift
-// VY is unchanged
+// 8XY6	Set VX equal to VX bitshifted right 1. 
+// VF is set to the least significant bit of VX prior to the shift.
 void shr_vx_vy(Chip8State *state, uint8_t *code)
 {
     uint8_t x = code[0] & 0xF;
-    uint8_t y = (code[1] & 0xF0) >> 4;
-
-    state->V[0xF] = state->V[y] & 0x1;
-    state->V[x] = state->V[y] >> 1;
-
+    //uint8_t y = (code[1] & 0xF0) >> 4;
+    uint8_t lsb = state->V[x] & 0x01;
+    state->V[x] = state->V[x] >> 1;
+    state->V[0xF] = lsb;
     state->PC += 2;
 }
 
@@ -186,29 +186,28 @@ void subn_vx_vy(Chip8State *state, uint8_t *code)
 {
     uint8_t x = code[0] & 0xF;
     uint8_t y = (code[1] & 0xF0) >> 4;
+    state->V[x] = state->V[y] - state->V[x];
     if (state->V[x] > state->V[y])
-    {
-        state->V[0xF] = 1;
-    }
-    else 
     {
         state->V[0xF] = 0;
     }
-    state->V[x] = state->V[y] - state->V[x];
+    else 
+    {
+        state->V[0xF] = 1;
+    }
 
     state->PC += 2;
 }
 
-// 8XYE	Store the value of register VY shifted left one bit in register VX¹
-// Set register VF to the most significant bit prior to the shift
-// VY is unchanged
+// 8XYE	Set VX equal to VX bitshifted left 1. 
+// VF is set to the most significant bit of VX prior to the shift.
 void shl_vx_vy(Chip8State *state, uint8_t *code)
 {
     uint8_t x = code[0] & 0xF;
-    uint8_t y = (code[1] & 0xF0) >> 4;
-
-    state->V[0xF] = state->V[y] >> 7;
-    state->V[x] = state->V[y] << 1;
+    //uint8_t y = (code[1] & 0xF0) >> 4;
+    uint8_t msb = state->V[x] >> 7;
+    state->V[x] = state->V[x] << 1;
+    state->V[0xF] = msb;
 
     state->PC += 2;
 }
