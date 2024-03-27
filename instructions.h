@@ -9,7 +9,6 @@
 #include "chip8.h"
 
 // instructions Each CHIP-8 instruction is exactly 2 bytes long so PC will progess by 2 every instruction unless skipped
-// 0NNN	Execute machine language subroutine at address NNN
 // 00E0	Clear the screen CLS
 void cls(Chip8State *state);
 // 00EE	Return from a subroutine

@@ -210,6 +210,55 @@ void EmulateChip8(Chip8State *state) {
     }
 }
 
+void printDebug(Chip8State *state)
+{
+    printf("-----------------DEBUG INFO--------------\n");
+    uint8_t *opcode = &state->memory[state->PC];
+
+    printf("I: %04x \n", state->I);
+    printf("memory I: %04x \n", state->memory[state->I]);
+    printf("PC: %04x \n", state->PC);
+    printf("opcode: %04x \n", *opcode);
+    printf("V[0]: %04x \n", state->V[0]);
+    printf("V[1]: %04x \n", state->V[1]);
+    printf("V[2]: %04x \n", state->V[2]);
+    printf("V[3]: %04x \n", state->V[3]);
+    printf("V[4]: %04x \n", state->V[4]);
+    printf("V[5]: %04x \n", state->V[5]);
+    printf("V[6]: %04x \n", state->V[6]);
+    printf("V[7]: %04x \n", state->V[7]);
+    printf("V[8]: %04x \n", state->V[8]);
+    printf("V[9]: %04x \n", state->V[9]);
+    printf("V[10]: %04x \n", state->V[10]);
+    printf("V[11]: %04x \n", state->V[11]);
+    printf("V[12]: %04x \n", state->V[12]);
+    printf("V[13]: %04x \n", state->V[13]);
+    printf("V[14]: %04x \n", state->V[14]);
+    printf("V[F]: %04x \n", state->V[0xf]);
+}
+
+void handleDebug(Chip8State *state)
+{
+    char input;
+    printf("Debug mode enabled. Press Enter to execute each cycle, d to print debug (q + Enter to quit).\n");
+    while (1)
+    {
+        input = getchar();
+        if (input == 'q')
+        {
+            break;
+        }
+        else if (input == 'd')
+        {
+            printDebug(state);
+        }
+        else if (input == '\n')
+        {
+            EmulateChip8(state);
+        }
+    }
+}
+
 int main (int argc, char *argv[])
 {
     char *filename = argv[1];
@@ -237,6 +286,7 @@ int main (int argc, char *argv[])
         printf("\n");
     }
     fclose(fptr);
+
     printf("Iniating \n");
     Chip8State* chip8 = initiate();
    
@@ -246,6 +296,7 @@ int main (int argc, char *argv[])
     {
         chip8->memory[i + PC_START] = buffer[i + PC_START];
     }
+
     printf("Checking Debug Mode \n");
     int debugMode = 0;
     if (argc > 2 && strcmp(argv[2], "debug") == 0) 
@@ -253,39 +304,38 @@ int main (int argc, char *argv[])
         debugMode = 1;
         printf("DEBUG MODE ON \n");
     }
+
     printf("Iniating SDL\n");
     sdlInit();
     printf("Starting Execution Cycles \n");
+
     int cycles = 0;
     while ( chip8->pause == 0 )
     {
+        // debugmode draw cycle one at time
         if (debugMode == 1)
         {
-            char input;
-            printf("Debug mode enabled. Press Enter to execute each cycle (q + Enter to quit).\n");
-            while ((input = getchar()) != 'q')
-            {
-                if (input == '\n') 
-                {
-                    EmulateChip8(chip8);
-                    printf("Cycle executed. Press Enter to execute the next cycle (q + Enter to quit).\n");
-                }
-            }
+            handleDebug(chip8);
+            break;
         }
         else 
         {
-            printf("emulateing \n");
             EmulateChip8(chip8); // 1 cycle
         }
-        
+        // if draw instruction
         if (chip8->drawflag)
         {
             renderScreen(chip8);
             chip8->drawflag = 0;
         }
 
-        printf("end cycle %d \n", cycles);
-        
+        // if key press event
+        // SDL_PollEvent loop
+        // respond key up, key down
+
+        printf("End cycle %d \n", cycles);
+
+        // end test roms on certain cycles specified
         if (((strcmp(argv[1],"1-chip8-logo.ch8") == 0) & (cycles == 39))
         | ((strcmp(argv[1],"2-ibm-logo.ch8") == 0) & (cycles == 20))) 
         {
@@ -299,8 +349,12 @@ int main (int argc, char *argv[])
                 chip8->pause = 1;
             }
         }
+
         cycles += 1;
     }
+
+    printDebug(chip8);
+
     printf("q + Enter to clear screen\n");
     char input = getchar();
     if (input == 'q')

@@ -274,7 +274,16 @@ void drw_vx_vy_n(Chip8State *state, uint8_t *code)
 void add_i_vx(Chip8State *state, uint8_t *code)
 {
     uint8_t value = state->V[code[0] & 0xF];
-    state->I += value;
+    uint16_t res = state->I + value;
+    state->I = res;
+    if (res > 0x0FFF) // check if res would overflow past addressing range
+    {
+        state->V[0xf] = 1;
+    }
+    else
+    {
+        state->V[0xf] = 0;
+    }
     state->PC += 2;
 }
 
