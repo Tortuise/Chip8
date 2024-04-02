@@ -270,6 +270,99 @@ void drw_vx_vy_n(Chip8State *state, uint8_t *code)
     state->PC += 2;
 }
 
+// remaps keys from keyboard to keypad value 0-15
+int remap(SDL_KeyCode key)
+{
+    switch (key)
+    {
+        case SDLK_1: return 1; 
+        case SDLK_2: return 2;
+        case SDLK_3: return 3;
+        case SDLK_4: return 12;
+        case SDLK_q: return 4;
+        case SDLK_w: return 5;
+        case SDLK_e: return 6;
+        case SDLK_r: return 13;
+        case SDLK_a: return 7;
+        case SDLK_s: return 8;
+        case SDLK_d: return 9;
+        case SDLK_f: return 14;
+        case SDLK_z: return 10;
+        case SDLK_x: return 0;
+        case SDLK_c: return 11;
+        case SDLK_v: return 15;
+        default: return -1;
+    }
+}
+
+// EX9E	Skip the following instruction if the key corresponding to the hex value currently stored in register VX is pressed
+void skp_vx(Chip8State *state, uint8_t *code)
+{
+    uint8_t x = code[0] & 0xF;
+    if (state->keys[state->V[x]] == 1)
+    {
+        state->PC += 4;
+    }
+    else
+    {
+        state->PC += 2;
+    }
+}
+
+// EXA1	Skip the following instruction if the key corresponding to the hex value currently stored in register VX is not pressed
+void sknp_vx(Chip8State *state, uint8_t *code)
+{
+    uint8_t x = code[0] & 0xF;
+    if (state->keys[state->V[x]] == 0) // if key = 0 returns -1
+    {
+        state->PC += 4;
+    }
+    else
+    {
+        state->PC += 2;
+    }
+}
+
+// FX07	Store the current value of the delay timer in register VX
+void ld_vx_dt(Chip8State *state, uint8_t *code)
+{
+    uint8_t x = code[0] & 0xF;
+    state->V[x] = state->delay_timer;
+    state->PC += 2;
+}
+
+// FX0A	Wait for a keypress and store the result in register VX
+void ld_vx_key(Chip8State *state, uint8_t *code)
+{
+    uint8_t x = code[0] & 0xF;
+    state->key_pressed = 0;
+
+    for (int i = 0; i < NUM_KEYS; i++)
+    {
+        if (state->keys[i])
+        {
+            state->keys[i] = 0;
+            state->V[x] = i;
+            state->key_pressed = 1;
+            break;
+        }
+    }
+
+    if (state->key_pressed == 0)
+    {
+        return;
+    }
+    state->PC += 2;
+}
+
+// FX15	Set the delay timer to the value of register VX
+void ld_dt_vx(Chip8State *state, uint8_t *code)
+{
+    uint8_t x = code[0] & 0xF;
+    state->delay_timer = state->V[x];
+    state->PC += 2;
+}
+
 // FX1E	ADD I VX - Add the value stored in register VX to register I
 void add_i_vx(Chip8State *state, uint8_t *code)
 {

@@ -8,6 +8,9 @@
 
 #include "chip8.h"
 
+// remaps keys from keyboard to keypad value 0-15
+int remap(SDL_KeyCode key);
+
 // instructions Each CHIP-8 instruction is exactly 2 bytes long so PC will progess by 2 every instruction unless skipped
 // 00E0	Clear the screen CLS
 void cls(Chip8State *state);
@@ -62,21 +65,25 @@ void ld_i_nnn(Chip8State *state, uint8_t *code);
 // BNNN	Jump to address NNN + V0
 // CXNN	Set VX to a random number with a mask of NN
 // DXYN	Draw a sprite at position VX, VY with N bytes of sprite data starting at the address stored in I
-void drw_vx_vy_n(Chip8State *state, uint8_t *code);
 // Set VF to 01 if any set pixels are changed to unset, and 00 otherwise
+void drw_vx_vy_n(Chip8State *state, uint8_t *code);
 // EX9E	Skip the following instruction if the key corresponding to the hex value currently stored in register VX is pressed
+void skp_vx(Chip8State *state, uint8_t *code);
 // EXA1	Skip the following instruction if the key corresponding to the hex value currently stored in register VX is not pressed
+void sknp_vx(Chip8State *state, uint8_t *code);
 // FX07	Store the current value of the delay timer in register VX
+void ld_dt_vx(Chip8State *state, uint8_t *code);
 // FX0A	Wait for a keypress and store the result in register VX
+void ld_vx_key(Chip8State *state, uint8_t *code);
 // FX15	Set the delay timer to the value of register VX
+void ld_vx_dt(Chip8State *state, uint8_t *code);
 // FX18	Set the sound timer to the value of register VX
 // FX1E	Add the value stored in register VX to register I
 void add_i_vx(Chip8State *state, uint8_t *code);
 // FX29	Set I to the memory address of the sprite data corresponding to the hexadecimal digit stored in register VX
 // FX33	Store the binary-coded decimal equivalent of the value stored in register VX at addresses I, I + 1, and I + 2
 void bcd_vx(Chip8State *state, uint8_t *code);
-// FX55	Store the values of registers V0 to VX inclusive in memory starting at address I
-// I is set to I + X + 1 after operation²
+// FX55	Store the values of registers V0 to VX inclusive in memory starting at address I // I is set to I + X + 1 after operation
 void ld_i_vx(Chip8State *state, uint8_t *code);
 // FX65	Copy values from memory location I through I + X into registers V0 through VX. I does not change.
 void ld_vx_i(Chip8State *state, uint8_t *code);

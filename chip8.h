@@ -22,6 +22,7 @@
 #define MONITOR_WIDTH 640
 #define MONITOR_HEIGHT 480
 #define OVERFLOW 255
+#define NUM_KEYS 16
 
 /* 
 V - 16 8 bit registers v0 v1 ... vF
@@ -42,6 +43,11 @@ typedef struct Chip8State {
     uint32_t screen[SCREEN_HEIGHT * SCREEN_WIDTH];
     uint8_t drawflag;
     uint8_t pause;
+
+    int key_pressed;
+    uint8_t keys[NUM_KEYS];
+    uint8_t delay_timer;
+
 } Chip8State;
 
 Chip8State* initiate(void);

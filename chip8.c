@@ -152,6 +152,12 @@ Chip8State* initiate(void)
     state->SP = STACK_START;
     state->drawflag = 0;
     state->pause = 0;
+    state->delay_timer = 0;
+    for (int i = 0; i < NUM_KEYS; i++) {
+        state->V[i] = 0;
+        state->keys[i] = 0;
+        state->stack[i] = 0;
+    }
     return state;
 
 }
@@ -197,10 +203,19 @@ void EmulateChip8(Chip8State *state) {
         case 0x0b: printf("b not handled yet \n"); state->pause = 1; break;    
         case 0x0c: printf("c not handled yet \n"); state->pause = 1; break;    
         case 0x0d: drw_vx_vy_n(state, opcode); break;    
-        case 0x0e: printf("e not handled yet \n"); state->pause = 1; break;    
+        case 0x0e: 
+            switch (opcode[1])    
+            {
+                case 0x9e: skp_vx(state, opcode); break;
+                case 0xa1: sknp_vx(state, opcode); break;
+                default: printf("Not implemented e"); state->pause = 1; break;
+            } break;
         case 0x0f: 
             switch (opcode[1])
             {
+                case 0x07: ld_vx_dt(state, opcode); break;
+                case 0x0a: ld_vx_key(state, opcode); break;
+                case 0x15: ld_dt_vx(state, opcode); break;
                 case 0x1e: add_i_vx(state, opcode); break;
                 case 0x33: bcd_vx(state, opcode); break;
                 case 0x55: ld_i_vx(state, opcode); break;
@@ -307,6 +322,7 @@ int main (int argc, char *argv[])
 
     printf("Iniating SDL\n");
     sdlInit();
+    SDL_Event event;
     printf("Starting Execution Cycles \n");
 
     int cycles = 0;
@@ -329,9 +345,44 @@ int main (int argc, char *argv[])
             chip8->drawflag = 0;
         }
 
-        // if key press event
-        // SDL_PollEvent loop
-        // respond key up, key down
+        // if key press event next cycle will activate instruction
+         //Handle events on queue
+        while( SDL_PollEvent(&event) != 0 )
+        {
+            //User requests quit
+            if( event.type == SDL_QUIT )
+            {
+            }
+            //User presses a key
+            if( event.type == SDL_KEYDOWN )
+            {
+                ;
+                // update key that was pressed
+                for (int i = 0; i < NUM_KEYS; i++)
+                {
+                    if (remap(event.key.keysym.sym) == i)
+                    {
+                        chip8->keys[i] = 1;
+                    }
+                }
+            }
+            // update keys not pressed
+            if (event.type == SDL_KEYUP) {
+                for (int i = 0; i < NUM_KEYS; i++)
+                {
+                    if (remap(event.key.keysym.sym) == i)
+                    {
+                        chip8->keys[i] = 0;
+                    }
+                }
+            }
+        }
+        
+        // countdown timer at 60hz
+        if (chip8->delay_timer > 0)
+        {
+            chip8->delay_timer--;
+        }
 
         printf("End cycle %d \n", cycles);
 
