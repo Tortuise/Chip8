@@ -229,6 +229,21 @@ void ld_i_nnn(Chip8State *state, uint8_t *code)
     state->I = nnn;
     state->PC += 2;
 }
+// BNNN	Jump to address NNN + V0
+void jmp_nnn_v0(Chip8State *state, uint8_t *code)
+{
+    uint16_t nnn = (((code[0] & 0xF) << 8) | code[1]);
+    state->PC += nnn + state->V[0];
+}
+// CXNN	Set VX to a random number with a mask of NN
+void rnd_vx_nn(Chip8State *state, uint8_t *code)
+{
+    uint8_t nn = code[1];
+    uint8_t x = code[0] & 0xF;
+    int r = rand() % (OVERFLOW + 1);
+    state->V[x] = r & nn;
+    state->PC += 2;
+}
 
 // DXYN	DRW VX, VY, N - Display N-byte sprite starting at memory location I at (VX, VY).
 // Each set bit of xored with what's already drawn.
@@ -377,6 +392,15 @@ void add_i_vx(Chip8State *state, uint8_t *code)
     {
         state->V[0xf] = 0;
     }
+    state->PC += 2;
+}
+
+// FX29	Set I to the memory address of the sprite data corresponding to the hexadecimal digit stored in register VX
+void ld_i_font(Chip8State *state, uint8_t *code)
+{
+    uint8_t x = code[0] & 0xF;
+    int digit = state->V[x] * FONT_WIDTH;
+    state->I = digit;
     state->PC += 2;
 }
 

@@ -23,6 +23,8 @@
 #define MONITOR_HEIGHT 480
 #define OVERFLOW 255
 #define NUM_KEYS 16
+#define FONTSET_SIZE 80
+#define FONT_WIDTH 5
 
 /* 
 V - 16 8 bit registers v0 v1 ... vF
@@ -52,4 +54,5 @@ typedef struct Chip8State {
 
 Chip8State* initiate(void);
 void EmulateChip8(Chip8State *state);
+
 #endif 

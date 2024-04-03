@@ -76,6 +76,26 @@ void Disassembler(uint8_t *codebuffer, int pc, FILE *fptr)
     }
 }
 
+uint8_t chip8_fontset[FONTSET_SIZE] =
+{ 
+  0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
+  0x20, 0x60, 0x20, 0x20, 0x70, // 1
+  0xF0, 0x10, 0xF0, 0x80, 0xF0, // 2
+  0xF0, 0x10, 0xF0, 0x10, 0xF0, // 3
+  0x90, 0x90, 0xF0, 0x10, 0x10, // 4
+  0xF0, 0x80, 0xF0, 0x10, 0xF0, // 5
+  0xF0, 0x80, 0xF0, 0x90, 0xF0, // 6
+  0xF0, 0x10, 0x20, 0x40, 0x40, // 7
+  0xF0, 0x90, 0xF0, 0x90, 0xF0, // 8
+  0xF0, 0x90, 0xF0, 0x10, 0xF0, // 9
+  0xF0, 0x90, 0xF0, 0x90, 0x90, // A
+  0xE0, 0x90, 0xE0, 0x90, 0xE0, // B
+  0xF0, 0x80, 0x80, 0x80, 0xF0, // C
+  0xE0, 0x90, 0x90, 0x90, 0xE0, // D
+  0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
+  0xF0, 0x80, 0xF0, 0x80, 0x80  // F
+};
+
 SDL_Window* window;
 SDL_Renderer* renderer;
 SDL_Texture* texture;
@@ -160,6 +180,19 @@ Chip8State* initiate(void)
     }
     return state;
 
+    // load fontset into memory
+    for (int i = 0; i < FONTSET_SIZE; i++)
+    {
+        state->memory[i] = chip8_fontset[i];
+    }
+
+    // clear keyboard
+    state->key_pressed = 0;
+    for (int i = 0; i < NUM_KEYS; i++)
+    {
+        state->keys[i] = 0;
+    }
+
 }
 
 void EmulateChip8(Chip8State *state) {
@@ -200,8 +233,8 @@ void EmulateChip8(Chip8State *state) {
             } break;
         case 0x09: sne_vx_vy(state, opcode); break;    
         case 0x0a: ld_i_nnn(state, opcode); break;    
-        case 0x0b: printf("b not handled yet \n"); state->pause = 1; break;    
-        case 0x0c: printf("c not handled yet \n"); state->pause = 1; break;    
+        case 0x0b: jmp_nnn_v0(state, opcode); break;    
+        case 0x0c: rnd_vx_nn(state, opcode); break;    
         case 0x0d: drw_vx_vy_n(state, opcode); break;    
         case 0x0e: 
             switch (opcode[1])    
@@ -217,6 +250,7 @@ void EmulateChip8(Chip8State *state) {
                 case 0x0a: ld_vx_key(state, opcode); break;
                 case 0x15: ld_dt_vx(state, opcode); break;
                 case 0x1e: add_i_vx(state, opcode); break;
+                case 0x29: ld_i_font(state, opcode); break;
                 case 0x33: bcd_vx(state, opcode); break;
                 case 0x55: ld_i_vx(state, opcode); break;
                 case 0x65: ld_vx_i(state, opcode); break;
@@ -233,7 +267,7 @@ void printDebug(Chip8State *state)
     printf("I: %04x \n", state->I);
     printf("memory I: %04x \n", state->memory[state->I]);
     printf("PC: %04x \n", state->PC);
-    printf("opcode: %04x \n", *opcode);
+    printf("opcode: %02x%02x \n", opcode[0],opcode[1]);
     printf("V[0]: %04x \n", state->V[0]);
     printf("V[1]: %04x \n", state->V[1]);
     printf("V[2]: %04x \n", state->V[2]);

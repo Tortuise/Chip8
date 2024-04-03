@@ -63,7 +63,9 @@ void sne_vx_vy(Chip8State *state, uint8_t *code);
 // ANNN	Store memory address NNN in register I
 void ld_i_nnn(Chip8State *state, uint8_t *code);
 // BNNN	Jump to address NNN + V0
+void jmp_nnn_v0(Chip8State *state, uint8_t *code);
 // CXNN	Set VX to a random number with a mask of NN
+void rnd_vx_nn(Chip8State *state, uint8_t *code);
 // DXYN	Draw a sprite at position VX, VY with N bytes of sprite data starting at the address stored in I
 // Set VF to 01 if any set pixels are changed to unset, and 00 otherwise
 void drw_vx_vy_n(Chip8State *state, uint8_t *code);
@@ -81,6 +83,7 @@ void ld_vx_dt(Chip8State *state, uint8_t *code);
 // FX1E	Add the value stored in register VX to register I
 void add_i_vx(Chip8State *state, uint8_t *code);
 // FX29	Set I to the memory address of the sprite data corresponding to the hexadecimal digit stored in register VX
+void ld_i_font(Chip8State *state, uint8_t *code);
 // FX33	Store the binary-coded decimal equivalent of the value stored in register VX at addresses I, I + 1, and I + 2
 void bcd_vx(Chip8State *state, uint8_t *code);
 // FX55	Store the values of registers V0 to VX inclusive in memory starting at address I // I is set to I + X + 1 after operation
