@@ -380,13 +380,15 @@ int main (int argc, char *argv[])
          //Handle events on queue
         while( SDL_PollEvent(&event) != 0 )
         {
-            //User requests quit
-            if( event.type == SDL_QUIT )
-            {
-            }
             //User presses a key
             if( event.type == SDL_KEYDOWN )
             {
+                if (event.key.keysym.sym == SDLK_ESCAPE)
+                {
+                    chip8->pause = 1;
+                    break;
+                }
+                
                 // update key that was pressed
                 for (int i = 0; i < NUM_KEYS; i++)
                 {
