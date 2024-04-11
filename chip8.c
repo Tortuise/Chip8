@@ -161,18 +161,14 @@ Chip8State* initiate(void)
 {
     Chip8State* state = calloc(sizeof(Chip8State), 1);
     state->memory = calloc(TOTAL_RAM, 1);
-    //clear screen
-    // for (int i = 0; i < SCREEN_HEIGHT; i++) {
-    //     for (int j = 0; j < SCREEN_WIDTH; j++) {
-    //         state->screen[i][j] = 0;
-    //     }
-    // }
+
     memset(state->screen, 0, sizeof(state->screen));
     state->PC = PC_START;
     state->SP = STACK_START;
     state->drawflag = 0;
     state->pause = 0;
     state->delay_timer = 0;
+    state->sound_timer = 0;
     for (int i = 0; i < NUM_KEYS; i++) {
         state->V[i] = 0;
         state->keys[i] = 0;
@@ -249,6 +245,7 @@ void EmulateChip8(Chip8State *state) {
                 case 0x07: ld_vx_dt(state, opcode); break;
                 case 0x0a: ld_vx_key(state, opcode); break;
                 case 0x15: ld_dt_vx(state, opcode); break;
+                case 0x18: ld_st_vx(state, opcode); break;
                 case 0x1e: add_i_vx(state, opcode); break;
                 case 0x29: ld_i_font(state, opcode); break;
                 case 0x33: bcd_vx(state, opcode); break;
@@ -416,6 +413,10 @@ int main (int argc, char *argv[])
         if (chip8->delay_timer > 0)
         {
             chip8->delay_timer--;
+        }
+        if (chip8->sound_timer > 0)
+        {
+            chip8->sound_timer--;
         }
 
         printf("End cycle %d \n", cycles);

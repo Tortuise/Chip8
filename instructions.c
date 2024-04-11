@@ -280,7 +280,6 @@ void drw_vx_vy_n(Chip8State *state, uint8_t *code)
             }
         }
     }
-    printf("Completed draw command \n");
     state->drawflag = 1;
     state->PC += 2;
 }
@@ -375,6 +374,14 @@ void ld_dt_vx(Chip8State *state, uint8_t *code)
 {
     uint8_t x = code[0] & 0xF;
     state->delay_timer = state->V[x];
+    state->PC += 2;
+}
+
+// FX18	Set the sound timer to the value of register VX
+void ld_st_vx(Chip8State *state, uint8_t *code)
+{
+    uint8_t x = code[0] & 0xF;
+    state->sound_timer = state->V[x];
     state->PC += 2;
 }
 

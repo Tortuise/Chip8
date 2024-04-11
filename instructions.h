@@ -74,12 +74,13 @@ void skp_vx(Chip8State *state, uint8_t *code);
 // EXA1	Skip the following instruction if the key corresponding to the hex value currently stored in register VX is not pressed
 void sknp_vx(Chip8State *state, uint8_t *code);
 // FX07	Store the current value of the delay timer in register VX
-void ld_dt_vx(Chip8State *state, uint8_t *code);
+void ld_vx_dt(Chip8State *state, uint8_t *code);
 // FX0A	Wait for a keypress and store the result in register VX
 void ld_vx_key(Chip8State *state, uint8_t *code);
 // FX15	Set the delay timer to the value of register VX
-void ld_vx_dt(Chip8State *state, uint8_t *code);
+void ld_dt_vx(Chip8State *state, uint8_t *code);
 // FX18	Set the sound timer to the value of register VX
+void ld_st_vx(Chip8State *state, uint8_t *code);
 // FX1E	Add the value stored in register VX to register I
 void add_i_vx(Chip8State *state, uint8_t *code);
 // FX29	Set I to the memory address of the sprite data corresponding to the hexadecimal digit stored in register VX

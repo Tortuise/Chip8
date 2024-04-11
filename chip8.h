@@ -49,6 +49,7 @@ typedef struct Chip8State {
     int key_pressed;
     uint8_t keys[NUM_KEYS];
     uint8_t delay_timer;
+    uint8_t sound_timer;
 
 } Chip8State;
 
