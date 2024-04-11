@@ -14,7 +14,7 @@ ___________
 - Paste SDL2 Include and bin contents into MinGW32 contents folder respectively
 - Paste SDL2.dll into Chip8 source folder 
 - run cmd mingw32-make
-- run ./chip8_emulator <rom> <debug>
+- run ./chip8_emulator \<rom> \<debug>
 - clean run mingw32-make clean (on windows system use del cmd if not use rm -f *.o)
 
 KEYS
