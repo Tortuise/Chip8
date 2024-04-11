@@ -1,6 +1,7 @@
 #include "chip8.h"
 #include "instructions.h"
 
+// disassembler function to translate opcode into an instruction for debugging
 void Disassembler(uint8_t *codebuffer, int pc, FILE *fptr) 
 {
     uint8_t *code = &codebuffer[pc];
@@ -96,37 +97,34 @@ uint8_t chip8_fontset[FONTSET_SIZE] =
   0xF0, 0x80, 0xF0, 0x80, 0x80  // F
 };
 
-SDL_Window* window;
-SDL_Renderer* renderer;
-SDL_Texture* texture;
 
 //SDL functions
-int sdlInit()
+Screen* sdlInit()
 {
-	//Initialization flag
-	int success = 1;
+    Screen* screen = calloc(sizeof(Screen), 1);
+	
     SDL_Init(SDL_INIT_VIDEO);
-    window = SDL_CreateWindow("Chip8",
+    screen->window = SDL_CreateWindow("Chip8",
      SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH * 10, SCREEN_HEIGHT * 10, 0);
-    if (!window){
+    if (!screen->window){
         fprintf(stderr, "Could not create %s: %s\n", "window", SDL_GetError());
-        return 0;
+        
     }
      uint8_t render_flags = SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC;
-    renderer = SDL_CreateRenderer(window, -1, render_flags);
-    if (!renderer){
+    screen->renderer = SDL_CreateRenderer(screen->window, -1, render_flags);
+    if (!screen->renderer){
         fprintf(stderr, "Could not create %s: %s\n", "renderer", SDL_GetError());
-        return 0;
+      
     }
-    texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_TARGET, SCREEN_WIDTH, SCREEN_HEIGHT);
-	if (!texture){
+    screen->texture = SDL_CreateTexture(screen->renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_TARGET, SCREEN_WIDTH, SCREEN_HEIGHT);
+	if (!screen->texture){
         fprintf(stderr, "Could not create %s: %s\n", "texture", SDL_GetError());
-        return 0;
+       
     }
-    return success;
+    return screen;
 }
 
-void renderScreen(Chip8State *state)
+void renderScreen(Chip8State *state, Screen *screen)
 {
     FILE *file = fopen("draw.txt", "w");
     if (file == NULL) {
@@ -144,16 +142,16 @@ void renderScreen(Chip8State *state)
 
     fclose(file);
 
-    SDL_UpdateTexture(texture, NULL, state->screen, SCREEN_WIDTH * sizeof(uint32_t));
-    SDL_RenderClear(renderer);
-    SDL_RenderCopy(renderer, texture, NULL, NULL);
-    SDL_RenderPresent(renderer);
+    SDL_UpdateTexture(screen->texture, NULL, state->screen, SCREEN_WIDTH * sizeof(uint32_t));
+    SDL_RenderClear(screen->renderer);
+    SDL_RenderCopy(screen->renderer, screen->texture, NULL, NULL);
+    SDL_RenderPresent(screen->renderer);
 }
 
-void clearSDL() {
-    SDL_DestroyTexture(texture);
-    SDL_DestroyRenderer(renderer);
-    SDL_DestroyWindow(window);
+void clearSDL(Screen *screen) {
+    SDL_DestroyTexture(screen->texture);
+    SDL_DestroyRenderer(screen->renderer);
+    SDL_DestroyWindow(screen->window);
     SDL_Quit();
 }
 
@@ -352,7 +350,7 @@ int main (int argc, char *argv[])
     }
 
     printf("Iniating SDL\n");
-    sdlInit();
+    Screen* screen = sdlInit();
     SDL_Event event;
     printf("Starting Execution Cycles \n");
 
@@ -372,7 +370,7 @@ int main (int argc, char *argv[])
         // if draw instruction
         if (chip8->drawflag)
         {
-            renderScreen(chip8);
+            renderScreen(chip8, screen);
             chip8->drawflag = 0;
         }
 
@@ -445,7 +443,7 @@ int main (int argc, char *argv[])
     char input = getchar();
     if (input == 'q')
         {
-            clearSDL();
+            clearSDL(screen);
         }
     return 0;
 }

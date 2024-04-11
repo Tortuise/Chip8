@@ -53,6 +53,13 @@ typedef struct Chip8State {
 
 } Chip8State;
 
+typedef struct Screen {
+    SDL_Window* window;
+    SDL_Renderer* renderer;
+    SDL_Texture* texture;
+    
+} Screen;
+
 Chip8State* initiate(void);
 void EmulateChip8(Chip8State *state);
 
