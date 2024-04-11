@@ -131,7 +131,7 @@ void renderScreen(Chip8State *state, Screen *screen)
         perror("Error opening file");
         return;
     }
-    // log render
+    // log render for debugging
     for (int y = 0; y < SCREEN_HEIGHT; y++) {
         for (int x = 0; x < SCREEN_WIDTH; x++) {
             int index = y * SCREEN_WIDTH + x;
@@ -305,6 +305,7 @@ void handleDebug(Chip8State *state)
 
 int main (int argc, char *argv[])
 {
+    // Reading ROM file and running dissasembler
     char *filename = argv[1];
     FILE *f = fopen(filename, "rb");
     if (f==NULL)
@@ -354,6 +355,7 @@ int main (int argc, char *argv[])
     SDL_Event event;
     printf("Starting Execution Cycles \n");
 
+    // Emulation cycle
     int cycles = 0;
     while ( chip8->pause == 0 )
     {
@@ -385,7 +387,6 @@ int main (int argc, char *argv[])
             //User presses a key
             if( event.type == SDL_KEYDOWN )
             {
-                ;
                 // update key that was pressed
                 for (int i = 0; i < NUM_KEYS; i++)
                 {
@@ -416,29 +417,9 @@ int main (int argc, char *argv[])
         {
             chip8->sound_timer--;
         }
-
-        printf("End cycle %d \n", cycles);
-
-        // end test roms on certain cycles specified
-        if (((strcmp(argv[1],"1-chip8-logo.ch8") == 0) & (cycles == 39))
-        | ((strcmp(argv[1],"2-ibm-logo.ch8") == 0) & (cycles == 20))) 
-        {
-            printf("end test rom \n");
-            // pause indef
-            
-            printf("q + Enter to quit.\n");
-            char input = getchar();
-            if (input == 'q')
-            {
-                chip8->pause = 1;
-            }
-        }
-
         cycles += 1;
     }
-
     printDebug(chip8);
-
     printf("q + Enter to clear screen\n");
     char input = getchar();
     if (input == 'q')
